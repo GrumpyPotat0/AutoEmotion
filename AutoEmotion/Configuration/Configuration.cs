@@ -16,7 +16,7 @@ namespace AutoEmotion;
 public class AutoEmotionConfig : IPluginConfiguration
 {
     public int Version { get; set; } = 0;
-    public bool isActived = true;
+    public bool isActived = false;
     public bool isChatActive = true;
     public bool isReactionActive = true;
     public bool isChatLogHidden = false;

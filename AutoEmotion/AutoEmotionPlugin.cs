@@ -19,8 +19,8 @@ namespace AutoEmotion;
 
 public partial class AutoEmotionPlugin : IDalamudPlugin
 {
-    public AutoEmotionConfig config { get; set; }
-    private AutoEmotionConfig configGUI { get; set; }
+    public AutoEmotionConfig config { get; set; } = new();
+    private AutoEmotionConfig configGUI { get; set; } = new();
     private bool isOpenConfig;
     private bool isOpenStatusWin;
     private const string CommandName = "/aemote";
@@ -79,6 +79,13 @@ public partial class AutoEmotionPlugin : IDalamudPlugin
 
     private void FrameworkUpdate(IFramework framework)
     {
+        // Recheck at execution time: delayed work must not survive disabling,
+        // logout, zoning, combat, or another unavailable character state.
+        if (!config.isActived || !CharacterUtility.IsCharacterAvailable(config))
+        {
+            ClearQueue();
+            return;
+        }
         if (config != null)
         {
             try
@@ -138,7 +145,8 @@ public partial class AutoEmotionPlugin : IDalamudPlugin
                 else if (timerResume.IsRunning)
                 {
                     var currentEmote = CharacterUtility.GetCurrentEmote();
-                    if (currentEmote != null && currentEmote.EmoteID == 0)
+                    if (timerResume.ElapsedMilliseconds >= messageProcessResume.delay
+                        && currentEmote != null && currentEmote.EmoteID == 0)
                     {
                         if (!string.IsNullOrEmpty(messageProcessResume.emote))
                         {
@@ -175,11 +183,13 @@ public partial class AutoEmotionPlugin : IDalamudPlugin
         Svc.PluginInterface.UiBuilder.Draw -= DrawConfigUI;
         Svc.PluginInterface.UiBuilder.Draw -= DrawStatusWin;
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= OpenConfig;
+        Svc.PluginInterface.UiBuilder.OpenMainUi -= OpenConfig;
         Svc.ClientState.Login -= ClientState_Login;
         Svc.ClientState.Logout -= ClientState_Logout;
         EmoteReaderHooks.OnEmote -= OnEmote;
         EmoteReaderHooks.Dispose();
         RemoveHandler();
+        ClearQueue();
         ECommonsMain.Dispose();
     }
 
@@ -222,6 +232,7 @@ public partial class AutoEmotionPlugin : IDalamudPlugin
 
     private void OnActiveCommand(string command, string args)
     {
+        ClearQueue();
         if (args.EqualsIgnoreCaseAny("c", "chat"))
         {
             config.isChatActive = !config.isChatActive;
@@ -281,12 +292,15 @@ public partial class AutoEmotionPlugin : IDalamudPlugin
     private void ClientState_Logout(int type, int code)
     {
         isOpenStatusWin = false;
+        ClearQueue();
     }
 
     private void OpenConfig() => isOpenConfig = true;
 
     private void ClearQueue()
     {
+        timer.Reset();
+        timerResume.Reset();
         messageQueue.Clear();
         messageProcess.Clear();
         messageQueueResume.Clear();

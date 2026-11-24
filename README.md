@@ -1,8 +1,8 @@
-# ⚠️ Project Status ⚠️
+# Maintenance fork
 
-This project is no longer actively maintained or supported by the original author.
+This fork is maintained by GrumpyPotat0 from [FoxShadow10/AutoEmotion](https://github.com/FoxShadow10/AutoEmotion). The original author has discontinued maintenance. Original credits, license and artwork attribution are retained.
 
-The repository remains available under the terms of its existing license. Anyone interested in continuing development, maintenance, or further improvements is welcome to fork the project and take it forward.
+**Status: experimental API 15 maintenance build, not verified in game.** See [the maintenance audit and test plan](docs/MAINTENANCE.md). No release from this fork is advertised yet.
 
 
 # AutoEmotion
@@ -36,16 +36,7 @@ Customizable triggers and combinations to fit your specific style and expression
 
 ### Installation
 
-You can install AutoEmotion by adding the custom repository:
-
-1. Open Dalamud's Settings by typing `/xlsettings` in chat 
-2. Go to the *Experimental* tab
-3. Under *Custom Plugin Repositories* section, add the following Dalamud repo:
-
-`https://raw.githubusercontent.com/FoxShadow10/AutoEmotion/main/repo.json`
-
-4. Save and close
-5. Install the plugin **AutoEmotion** as you would with any other plugin
+Use the development build instructions and rollback procedure in [docs/MAINTENANCE.md](docs/MAINTENANCE.md). Do not add the original author's custom repository expecting updates from this fork. The fork's `repo.json` is intentionally empty until an in-game-tested release is available.
 
 ### Usage
 
@@ -59,9 +50,9 @@ All the configuration is done through the configuration window.
 
 Plugin icon made by **AlcielCroix** @ https://x.com/AlcielCroix
 
-If you like the plugin and want to support me you can donate through Ko-Fi @ https://ko-fi.com/foxshadow10
+Original author: **FoxShadow10**. Original author's Ko-Fi: https://ko-fi.com/foxshadow10
 
-This is my first plugin (and first experience with C#), so thanks to all of the developers that have helped me make this.
+The original author thanked the developers who helped create their first C# plugin.
 
 Special thanks to the projects that make this plugin work:
 

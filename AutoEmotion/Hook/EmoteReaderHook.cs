@@ -13,12 +13,23 @@ namespace AutoEmotion.Hooks
         public event EmoteDelegate? OnEmote;
 
         public delegate void OnEmoteFuncDelegate(ulong unk, ulong instigatorAddr, ushort emoteId, ulong targetId, ulong unk2);
-        private readonly Hook<OnEmoteFuncDelegate> hookEmote;
+        private readonly Hook<OnEmoteFuncDelegate>? hookEmote;
+        public bool IsAvailable => hookEmote != null;
 
         public EmoteReaderHooks()
         {
-            hookEmote = Svc.Hook.HookFromSignature<OnEmoteFuncDelegate>("E8 ?? ?? ?? ?? 48 8D 8B ?? ?? ?? ?? 4C 89 74 24", OnEmoteDetour);
-            hookEmote.Enable();
+            Hook<OnEmoteFuncDelegate>? candidate = null;
+            try
+            {
+                candidate = Svc.Hook.HookFromSignature<OnEmoteFuncDelegate>("E8 ?? ?? ?? ?? 48 8D 8B ?? ?? ?? ?? 4C 89 74 24", OnEmoteDetour);
+                candidate.Enable();
+                hookEmote = candidate;
+            }
+            catch (Exception e)
+            {
+                candidate?.Dispose();
+                Svc.Log.Error(e, "AutoEmotion: emote hook unavailable; emote reactions are disabled.");
+            }
         }
 
         public void Dispose()
@@ -31,18 +42,28 @@ namespace AutoEmotion.Hooks
             // unk - some field of event framework singleton? doesn't matter here anyway
             //PluginServices.PluginLog.Info($"Emote >> unk:{unk:X}, instigatorAddr:{instigatorAddr:X}, emoteId:{emoteId}, targetId:{targetId:X}, unk2:{unk2:X}");
 
-            if (Svc.Objects.LocalPlayer != null)
+            try
             {
-                if (targetId == Svc.Objects.LocalPlayer.GameObjectId)
+                if (Svc.Objects.LocalPlayer != null)
                 {
-                    var instigatorOb = Svc.Objects.FirstOrDefault(x => (ulong)x.Address == instigatorAddr);
-                    if (instigatorOb != null && instigatorOb is IPlayerCharacter playerCharacter)
+                    if (targetId == Svc.Objects.LocalPlayer.GameObjectId)
                     {
-                        OnEmote?.Invoke(playerCharacter, emoteId);
+                        var instigatorOb = Svc.Objects.FirstOrDefault(x => (ulong)x.Address == instigatorAddr);
+                        if (instigatorOb is IPlayerCharacter playerCharacter)
+                        {
+                            OnEmote?.Invoke(playerCharacter, emoteId);
+                        }
                     }
                 }
             }
-            hookEmote.Original(unk, instigatorAddr, emoteId, targetId, unk2);
+            catch (Exception e)
+            {
+                Svc.Log.Error(e, "AutoEmotion: failed to process an emote reaction.");
+            }
+            finally
+            {
+                hookEmote!.Original(unk, instigatorAddr, emoteId, targetId, unk2);
+            }
         }
     }
 }
