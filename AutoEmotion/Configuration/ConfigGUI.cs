@@ -33,6 +33,10 @@ namespace AutoEmotion
                         ImGui.BeginChild("##TabSettingsChild", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y));
 
                         DrawTextSeparator("GeneralSettings", "General");
+                        if (!EmoteReaderHooks.IsAvailable)
+                        {
+                            ImGui.TextWrapped("Emote reactions are unavailable because the game hook could not be initialized. Chat triggers can still be used. See the Dalamud log for details.");
+                        }
                         ImGui.Checkbox("Enable plugin##isActived", ref configGUI.isActived);
                         ImGui.SameLine();
                         ImGuiEx.InfoMarker($"Can be toogled using command:{Environment.NewLine}/aet");
@@ -201,6 +205,7 @@ namespace AutoEmotion
 
         private void SaveConfig()
         {
+            ClearQueue();
             config = configGUI;
             config.Save();
             InitializeConfig();

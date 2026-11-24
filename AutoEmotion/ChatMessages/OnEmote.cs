@@ -33,11 +33,7 @@ namespace AutoEmotion
             var pos = playerCharacter.Position;
 
             Svc.Log.Debug($"OnEmote > Player {playerName} - Emote {emoteId} - X: {pos.X} - Z: {pos.Z}");
-#if DEBUG
-            if (true)
-#else
             if (playerName != ECommons.GameHelpers.Player.Name)
-#endif
             {
                 var world = Svc.Data.GetExcelSheet<World>()?.GetRow(homeWorldID);
                 if (world == null) return;

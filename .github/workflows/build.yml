@@ -1,0 +1,47 @@
+name: Build and check maintenance
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'maintenance/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Download release-channel Dalamud
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:RUNNER_TEMP 'dalamud'
+          Invoke-WebRequest https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
+          Get-FileHash latest.zip -Algorithm SHA256
+          Expand-Archive latest.zip $path
+          $version = [Diagnostics.FileVersionInfo]::GetVersionInfo("$path/Dalamud.dll").FileVersion
+          if ([version]$version -lt [version]'15.0.0.0' -or [version]$version -ge [version]'16.0.0.0') {
+            throw "Review the plugin API target before building against Dalamud $version"
+          }
+          "DALAMUD_LIB_PATH=$path/" >> $env:GITHUB_ENV
+          "Verified release-channel Dalamud $version"
+      - name: Restore pinned packages
+        run: dotnet restore AutoEmotion.sln --locked-mode -p:DalamudLibPath="$env:DALAMUD_LIB_PATH" -p:GeneratePackageOnBuild=false
+      - name: Build Release and Debug
+        run: |
+          dotnet build AutoEmotion.sln -c Release --no-restore -p:DalamudLibPath="$env:DALAMUD_LIB_PATH" -p:GeneratePackageOnBuild=false
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build AutoEmotion.sln -c Debug --no-restore -p:DalamudLibPath="$env:DALAMUD_LIB_PATH" -p:GeneratePackageOnBuild=false
+      - name: Run isolated hook regression checks
+        run: dotnet run --project tests/AutoEmotion.Regression -c Release
+      - name: Verify package metadata and notices
+        run: ./scripts/Test-Package.ps1
+      # No binary upload or publication: see the license/provenance and
+      # in-game validation release gates in docs/MAINTENANCE.md.
